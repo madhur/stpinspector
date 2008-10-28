@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.SharePoint.Administration;
+using Microsoft.SharePoint;
 namespace STPInspectorLib
 {
     /// <summary>
@@ -13,9 +14,13 @@ namespace STPInspectorLib
         /// </summary>
         /// <param name="featureItems">List of features</param>
         /// <returns>TRUE if one of the feature was unresolved</returns>
-        public static bool ResolveFeatures(List<FeatureItem> featureItems)
+        public static Constants.SPStatus ResolveFeatures(List<FeatureItem> featureItems)
         {
             SPFarm farmObj=SPFarm.Local;
+            if (farmObj == null)
+            {
+                return Constants.SPStatus.Unavailable;
+            }
             bool unresolvedStatus = false;
             foreach(FeatureItem featureItem in featureItems)
             {
@@ -29,7 +34,10 @@ namespace STPInspectorLib
                 }
             }
 
-            return unresolvedStatus;
+            if (unresolvedStatus)
+                return Constants.SPStatus.NotResolved;
+            else
+                return Constants.SPStatus.Resolved;
           
         }
 

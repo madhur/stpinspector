@@ -126,7 +126,7 @@ namespace STPInspectorLib
         /// <param name="e"></param>
         private void decomp_NotifyCopyFile(object sender, CAB.NotifyEventArgs e)
         {
-            if(string.Compare(Constants.manifestFileName,e.args.str1,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.CompareOptions.IgnoreCase).Equals(0))
+            if(string.Compare(Constants.manifestFileName,e.args.str1,true).Equals(0))
             {
                 int err = 0;
                 

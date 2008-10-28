@@ -45,21 +45,22 @@ namespace STPInspectorWin
 
             if (fileDialog.ShowDialog() == DialogResult.OK)
             {
-               
-                        CabFilePath = fileDialog.FileName;
-                        
-                        txtPath.Text = CabFilePath;
-                        cblSiteFeatures.Items.Clear();
-                        cblWebFeatures.Items.Clear();
-                        
-                    
-                
+
+                CabFilePath = fileDialog.FileName;
+
+                txtPath.Text = CabFilePath;
+                cblSiteFeatures.Items.Clear();
+                cblWebFeatures.Items.Clear();
+                lblStatus.Text = string.Empty;
+
+
+
             }
 
-            
+
 
         }
-        
+
         /// <summary>
         /// Binds the two list boxes to the respective features
         /// </summary>
@@ -88,39 +89,21 @@ namespace STPInspectorWin
         /// <param name="e"></param>
         private void btnInspect_Click(object sender, EventArgs e)
         {
-            if(string.IsNullOrEmpty(CabFilePath))
+            if (string.IsNullOrEmpty(CabFilePath))
             {
-                return ;
+                return;
             }
 
-            CabUtil cabUtil=new CabUtil();
+            CabUtil cabUtil = new CabUtil();
+            List<FeatureItem> items=null, siteItems=null;
 
             try
             {
-                bool unresolvedWeb, unresolvedSite;
-                string manifestPath=cabUtil.ExtractManifest(CabFilePath, System.IO.Path.GetTempPath());
+               
+               string manifestPath = cabUtil.ExtractManifest(CabFilePath, System.IO.Path.GetTempPath());
 
-                List<FeatureItem> items = ManifestLib.GetWebFeatures(manifestPath,true);
-                List<FeatureItem> siteItems = ManifestLib.GetWebFeatures(manifestPath, false);
-
-                unresolvedWeb=FeatureLib.ResolveFeatures(items);
-                unresolvedSite=FeatureLib.ResolveFeatures(siteItems);
-
-                BindListBox(cblWebFeatures, items);
-                BindListBox(cblSiteFeatures, siteItems);
-
-                cblWebFeatures.SelectionMode = SelectionMode.None;
-                cblSiteFeatures.SelectionMode = SelectionMode.None;
-
-                if (unresolvedWeb || unresolvedSite)
-                {
-                    lblStatus.Text = Constants.unResolvedStatus;
-                }
-                else
-                {
-                    lblStatus.Text = Constants.resolvedStatus;
-                }
-
+               items = ManifestLib.GetWebFeatures(manifestPath, true);
+               siteItems = ManifestLib.GetWebFeatures(manifestPath, false);
             }
             catch (NotValidCabinetException)
             {
@@ -130,14 +113,42 @@ namespace STPInspectorWin
             {
                 MessageBox.Show(Constants.invalidCabinet);
             }
-          
-            finally
+            catch (UnauthorizedAccessException)
             {
-                CabUtil.DeleteFile(System.IO.Path.GetTempPath());
+                MessageBox.Show(Constants.accessDenied);
             }
 
+           
+
+                Constants.SPStatus statusWeb = FeatureLib.ResolveFeatures(items);
+                Constants.SPStatus statusSite = FeatureLib.ResolveFeatures(siteItems);
+           
+            BindListBox(cblWebFeatures, items);
+            BindListBox(cblSiteFeatures, siteItems);
+
+            cblWebFeatures.SelectionMode = SelectionMode.None;
+            cblSiteFeatures.SelectionMode = SelectionMode.None;
+
+            if (statusWeb==Constants.SPStatus.Unavailable||statusSite==Constants.SPStatus.Unavailable)
+            {
+                lblStatus.Text = Constants.failSP;
+            }
+            else if(statusWeb==Constants.SPStatus.Resolved&&statusSite==Constants.SPStatus.Resolved)
+            {
+                lblStatus.Text = Constants.resolvedStatus;
+            }
+            else if (statusWeb == Constants.SPStatus.NotResolved || statusSite == Constants.SPStatus.NotResolved)
+            {
+                lblStatus.Text = Constants.unResolvedStatus;
+            }
+
+            CabUtil.DeleteFile(System.IO.Path.GetTempPath());
+
+
+
+
         }
-        
+
         /// <summary>
         /// Handles the Load Event of the Form
         /// </summary>
